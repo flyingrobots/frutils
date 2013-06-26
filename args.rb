@@ -29,11 +29,13 @@ require File.join script_dir, 'log.rb'
 module FlyingRobots
   class Args
   public
-    def initialize
+    def initialize(options = {})
       @logger = Log.new({ :name => "Args" })
       @flags = {}
       @options = {}
       @types = Types.new
+      @help_title = options[:help_title]
+      @help_desc = options[:help_desc]
       _describe_flag "help", "Displays the help message.", {}
     end
 
@@ -45,13 +47,9 @@ module FlyingRobots
     end
 
     def print_help
-      puts "== About =="
-      puts "Prepends a file header containing a licence to the specified files."
-      puts ""
-      puts "== Useage =="
-      puts "  % ./licenser.rb [options]"
-      puts ""
-      puts "== Options =="
+      puts @help_title if @help_title != nil
+      puts @help_desc if @help_desc != nil
+      puts "Options:"
       @flags.values.each() { |f|
         puts "#{f[:short]} OR #{f[:long]}"
         puts "  #{f[:description]}"
@@ -60,13 +58,6 @@ module FlyingRobots
         puts "  Note: This option accepts multiple values of type '#{f[:type]}'." if f[:multi]
         puts ""
       }
-      puts "== Examples =="
-      puts "  A single file:"
-      puts "    licenser.rb -f foo.cpp"
-      puts ""
-      puts "  Using a specific license file:"
-      puts "    licenser.rb -f foo.coffee -l /path/to/some/license.txt"
-      puts ""
     end
 
     def parse(args)
