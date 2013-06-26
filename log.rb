@@ -22,6 +22,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 # ------------------------------------------------------------------------------
+require 'rubygems'
+require 'json'
+
 module FlyingRobots
 
   class Log
@@ -61,18 +64,18 @@ module FlyingRobots
     end
 
     def exception(e)
-      error e.to_s
-      error e.backtrace
+      error "[exception] #{_object_to_s(e)}"
+      error "[backtrace] #{_object_to_s(e.backtrace)}"
     end
 
   private
 
     def _log(volume, message)
       return if volume < @volume
-      name = @name.to_s
       volume_s = _volume_to_s @volume
+      name = @name == nil ? "" : "#{@name} "
       stream = volume > VOLUME_WARN ? $stderr : $stdout
-      stream << name ? "(#{name}) " : "" << volume_s << " " << message.to_s
+      stream.puts "#{name}#{_volume_to_s(volume)}#{_object_to_s(message)}"
     end
     
     def _volume_to_s(volume)
@@ -88,7 +91,17 @@ module FlyingRobots
       when VOLUME_ERROR
         "ERROR "
       else
-        raise "Unknown volume '#{volume}'."
+        raise "Unknown volume '#{volume.to_s}'."
+      end
+    end
+
+    def _object_to_s(object)
+      if object.class == Array
+        JSON.pretty_generate object
+      elsif object.class == Hash
+        JSON.pretty_generate object
+      else
+        object.to_s
       end
     end
 

@@ -156,14 +156,19 @@ module FlyingRobots
       if @types.class_of(type) == nil
         raise "Option #{name} has a type '#{type}', which is an unsupported type. (Must be ':boolean', ':int', ':float', or ':string')."
       end
-      flag[:default] = @types.default_value(type) if flag[:default] == nil
-      default_value_type = @types.type_of flag[:default].class
+      default_value = @types.default_value(type)
+      flag[:default] = default_value if flag[:default] == nil
+      default_value_type = @types.type_of default_value.class
       raise "Option #{name} has a default value of type '#{default_value_type}', which does not match the specified type '#{type}'." if options.key?(:default) and default_value_type != type
       raise "Option #{name} has a type '#{default_value_type}', which is not allowed for options that accept multiple values." if type == :boolean and flag[:multi]
       @flags[name_as_sym] = flag
       if not flag[:required]
-        @options[name_as_sym] = []
-        @options[name_as_sym] << flag[:default]
+        if flag[:multi]
+          @options[name_as_sym] = []
+          @options[name_as_sym] << default_value
+        else
+          @options[name_as_sym] = default_value
+        end
       end
       flag
     end
