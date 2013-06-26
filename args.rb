@@ -36,6 +36,7 @@ module FlyingRobots
       @types = Types.new
       @help_title = options[:help_title]
       @help_desc = options[:help_desc]
+      @copyright = options[:copyright]
       _describe_flag "help", "Displays the help message.", {}
     end
 
@@ -47,11 +48,20 @@ module FlyingRobots
     end
 
     def print_help
-      puts @help_title if @help_title != nil
-      puts @help_desc if @help_desc != nil
+      if @help_title != nil
+        puts @help_title
+        puts ""
+      end
+      if @help_desc != nil or @copyright != nil
+        puts "About:"
+        puts @help_desc if @help_desc != nil
+        puts @copyright if @copyright != nil
+        puts ""
+      end
       puts "Options:"
-      @flags.values.each() { |f|
-        puts "#{f[:short]} OR #{f[:long]}"
+      sorted_flags = @flags.values.sort { |a, b| b[:long].length - a[:long].length }
+      sorted_flags.each { |f|
+        puts "#{f[:long]}, #{f[:short]}"
         puts "  #{f[:description]}"
         puts "  Default: #{f[:default]}" unless f[:required]
         puts "  Note: This is a required option." if f[:required]
