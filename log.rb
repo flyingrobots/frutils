@@ -25,6 +25,9 @@
 require 'rubygems'
 require 'json'
 
+# TODO feature: ability to log messages with hashes and arrays using a single
+#   statement, for example log.info("Array is ", array) or similar.
+
 module FlyingRobots
 
   class Log

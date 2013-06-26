@@ -26,10 +26,6 @@ script_dir = File.expand_path File.dirname(__FILE__)
 require File.join script_dir, 'types.rb'
 require File.join script_dir, 'log.rb'
 
-# TODO JSON is used to pretty print arrays and hashes - add this feature to Log
-require 'rubygems'
-require 'json'
-
 module FlyingRobots
   class Args
   public
@@ -44,7 +40,8 @@ module FlyingRobots
     def describe_flag(name, description, options = {})
       raise "The option 'help' is reserved and cannot be overwritten." if name == "help"
       flag = _describe_flag name, description, options
-      @logger.debug "Args: Option '#{name}' => #{JSON.pretty_generate(flag)}"      
+      @logger.debug "Flag '#{name}':"
+      @logger.debug flag      
     end
 
     def print_help
@@ -109,7 +106,8 @@ module FlyingRobots
           end
         end
       }
-      @logger.debug "@options = #{JSON.pretty_generate(@options)}"
+      @logger.debug "@options:"
+      @logger.debug @options
       raise "No options were specified. See help for useage (-h or --help)." if @options.size == 0
       _check_for_required_options
       @options
@@ -147,7 +145,7 @@ module FlyingRobots
         :short => options.key?(:short) ? options[:short] : "-" + name.chars.first,
         :long => options.key?(:long) ? options[:long] : "--" + name,
         :description => description,
-        :default => options.key?(:default) ? options[:default] : nil,
+        :default => options[:default],
         :type => options.key?(:type) ? options[:type] : :boolean,
         :multi => options[:multi] == true,
         :required => options[:required] == true
