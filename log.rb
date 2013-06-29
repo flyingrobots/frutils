@@ -32,7 +32,6 @@ module FlyingRobots
 
   class Log
   public
-
     VOLUME_TRACE = 0
     VOLUME_DEBUG = 1
     VOLUME_INFO  = 2
@@ -46,39 +45,40 @@ module FlyingRobots
       @volume = options[:volume] || VOLUME_WARN
     end
 
-    def trace(message)
-      _log VOLUME_TRACE, message 
+    def trace(message, *rest)
+      _log VOLUME_TRACE, message, rest
     end
 
-    def debug(message)
-      _log VOLUME_DEBUG, message
+    def debug(message, *rest)
+      _log VOLUME_DEBUG, message, rest
     end
 
-    def info(message)
-      _log VOLUME_INFO, message
+    def info(message, *rest)
+      _log VOLUME_INFO, message, rest
     end
 
-    def warn(message)
-      _log VOLUME_WARN, message
+    def warn(message, *rest)
+      _log VOLUME_WARN, message, rest
     end
 
-    def error(message)
-      _log VOLUME_ERROR, message
+    def error(message, *rest)
+      _log VOLUME_ERROR, message, rest
     end
 
     def exception(e)
-      error "[exception] #{_object_to_s(e)}"
-      error "[backtrace] #{_object_to_s(e.backtrace)}"
+      error "[exception] ", e, e.backtrace
     end
 
   private
 
-    def _log(volume, message)
+    def _log(volume, message, *rest)
       return if volume < @volume
       volume_s = _volume_to_s @volume
       name = @name == nil ? "" : "#{@name} "
       stream = volume > VOLUME_WARN ? $stderr : $stdout
-      stream.puts "#{name}#{_volume_to_s(volume)}#{_object_to_s(message)}"
+      str = _object_to_s message
+      rest.each { |object| str.concat _object_to_s(object) + " " }
+      stream.puts name + _volume_to_s(volume) + str
     end
     
     def _volume_to_s(volume)
