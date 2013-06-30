@@ -32,22 +32,27 @@ class Args
 public
   #----------------------------------------------------------------------------
   def initialize(options = {})
-    @logger = Log.new({ :name => "Args" })
+    @log = Log.new(
+      :name => "Args",
+      :volume => Log::VOLUME_DEBUG
+    )
     @flags = {}
     @options = {}
     @types = Types.new
     @help_title = options[:help_title]
     @help_desc = options[:help_desc]
     @copyright = options[:copyright]
-    _describe_flag "help", "Displays the help message.", {}
+    _describe_flag "help", "Displays the help message."
+    options[:flags].each { |f|
+      _describe_flag f[:name], f[:desc], f[:options]
+    }
   end
 
   #----------------------------------------------------------------------------
   def describe_flag(name, description, options = {})
     raise "The option 'help' is reserved and cannot be overwritten." if name == "help"
-    flag = _describe_flag name, description, options
-    @logger.debug "Flag '#{name}':"
-    @logger.debug flag      
+    @log.info "Adding flag '#{name}' with options: ", options
+    _describe_flag name, description, options
   end
 
   #----------------------------------------------------------------------------
@@ -79,7 +84,7 @@ public
     context = CONTEXT_FLAG
     flag = nil
     args.each_with_index { |arg, index|
-      @logger.debug "Args: arg[#{index}] = #{arg}"
+      @log.debug "Args: arg[#{index}] = #{arg}"
       next_arg = args.size > index ? args[index + 1] : nil
       next_arg_is_value = next_arg ? !next_arg.start_with?("-") : false
       case context
@@ -90,7 +95,7 @@ public
         type = flag[:type]
         if type == :boolean
           @options[name.to_sym] = true
-          @logger.debug "Args: @options[#{name}] << 'true'"
+          @log.debug "Args: @options[#{name}] << 'true'"
         else
           context = CONTEXT_VALUE
           if next_arg == nil or not next_arg_is_value
@@ -102,7 +107,7 @@ public
         value = _parse_value arg, type
         name = flag[:name]
         @options[name.to_sym] << value
-        @logger.debug "Args: @options[#{name}] << #{value}."
+        @log.debug "Args: @options[#{name}] << #{value}."
         if next_arg_is_value
           if not flag[:multi]
             raise "Option '#{name}' expects a single value of type '#{type}'."
@@ -112,8 +117,8 @@ public
         end
       end
     }
-    @logger.debug "@options:"
-    @logger.debug @options
+    @log.debug "@options:"
+    @log.debug @options
     raise "No options were specified. See help for useage (-h or --help)." if @options.size == 0
     _check_for_required_options
     @options
@@ -147,7 +152,7 @@ private
   end
 
   #----------------------------------------------------------------------------
-  def _describe_flag(name, description, options)
+  def _describe_flag(name, description, options = {})
     name_as_sym = name.to_sym
     flag = {
       :name => name_as_sym,
@@ -159,22 +164,53 @@ private
       :multi => options[:multi] == true,
       :required => options[:required] == true
     }
-    type = flag[:type]
-    if @types.class_of(type) == nil
-      raise "Option #{name} has a type '#{type}', which is an unsupported type. (Must be ':boolean', ':int', ':float', or ':string')."
-    end
-    default_value = @types.default_value(type)
-    flag[:default] = default_value if flag[:default] == nil
-    default_value_type = @types.type_of default_value.class
-    raise "Option #{name} has a default value of type '#{default_value_type}', which does not match the specified type '#{type}'." if options.key?(:default) and default_value_type != type
-    raise "Option #{name} has a type '#{default_value_type}', which is not allowed for options that accept multiple values." if type == :boolean and flag[:multi]
+    @log.debug "Described flag: ", flag
+    _set_default_value flag unless flag[:required]
+    _validate_flag flag
     @flags[name_as_sym] = flag
+    _add_to_options flag
+  end
+
+  #----------------------------------------------------------------------------
+  def _set_default_value(flag)
+    @log.debug "Checking for default value for flag '#{flag[:name]}'"
+    if not flag.key? :default or flag[:default] == nil
+      @log.debug "Default not specified for flag '#{flag[:name]}', setting default value."
+      type = flag[:type]
+      if @types.class_of(type) == nil
+        raise "Option #{name} has a type '#{type}', which is an unsupported type (must be ':boolean', ':int', ':float', or ':string')"
+      end
+      default_value = @types.default_value(type)
+      flag[:default] = default_value
+    end
+  end
+
+  #----------------------------------------------------------------------------
+  def _validate_flag(flag)
+    @log.debug "Validating flag: ", flag
+    type = flag[:type]
+    if not flag[:required]
+      @log.debug "Flag '#{flag[:name]} is type '#{type}'"
+      default_value_type = @types.type_of flag[:default_value]
+      @log.debug "dfv class (#{default_value_type.class}), value (#{default_value_type})"
+      @log.debug "type class (#{type.class}), value (#{type})"
+      if flag.key?(:default) and default_value_type != type
+        raise "Option '#{flag[:name]}' has a default value of type '#{default_value_type}', which does not match the specified type '#{type}'"
+      end
+    end
+    if type == :boolean and flag[:multi]
+      raise "Option '#{flag[:name]}' has a type '#{default_value_type}', which is not allowed for options that accept multiple values"
+    end
+  end
+
+  #----------------------------------------------------------------------------
+  def _add_to_options(flag)
     if not flag[:required]
       if flag[:multi]
         @options[name_as_sym] = []
-        @options[name_as_sym] << default_value
+        @options[name_as_sym] << flag[:default_value]
       else
-        @options[name_as_sym] = default_value
+        @options[name_as_sym] = flag[:default_value]
       end
     end
     flag
