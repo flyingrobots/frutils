@@ -74,7 +74,15 @@ module FlyingRobots
       name = @name == nil ? "" : "#{@name} "
       stream = volume > VOLUME_WARN ? $stderr : $stdout
       str = _object_to_s message
-      rest.each { |object| str.concat _object_to_s(object) + " " }
+      if rest.size > 0
+        # Note: I guess that when rest is empty we actually
+        # see that rest is an Array of size 1, with element 0 being a
+        # zero-sized Array, which is bizzare. This hack prevents
+        # the log from printing an empty Array in such an event.
+        if rest.first.class != Array || rest.first.size > 0
+          rest.each { |object| str.concat _object_to_s(object) + " " }
+        end
+      end
       stream.puts name + _volume_to_s(volume) + str
     end
     
@@ -96,7 +104,7 @@ module FlyingRobots
     end
 
     def _object_to_s(object)
-      if object.class == Array and object.size > 0
+      if object.class == Array
         JSON.pretty_generate object
       elsif object.class == Hash
         JSON.pretty_generate object

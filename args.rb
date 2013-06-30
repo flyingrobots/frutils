@@ -32,10 +32,10 @@ class Args
 public
   #----------------------------------------------------------------------------
   def initialize(options = {})
-    @log = Log.new(
+    @log = Log.new({
       :name => "Args",
-      :volume => Log::VOLUME_DEBUG
-    )
+      # :volume => Log::VOLUME_DEBUG
+    })
     @flags = {}
     @options = {}
     @types = Types.new
@@ -117,8 +117,7 @@ public
         end
       end
     }
-    @log.debug "@options:"
-    @log.debug @options
+    @log.debug "@options:", @options
     raise "No options were specified. See help for useage (-h or --help)." if @options.size == 0
     _check_for_required_options
     @options
@@ -169,13 +168,12 @@ private
     _validate_flag flag
     @flags[name_as_sym] = flag
     _add_to_options flag
+    flag
   end
 
   #----------------------------------------------------------------------------
   def _set_default_value(flag)
-    @log.debug "Checking for default value for flag '#{flag[:name]}'"
     if not flag.key? :default or flag[:default] == nil
-      @log.debug "Default not specified for flag '#{flag[:name]}', setting default value."
       type = flag[:type]
       if @types.class_of(type) == nil
         raise "Option #{name} has a type '#{type}', which is an unsupported type (must be ':boolean', ':int', ':float', or ':string')"
@@ -187,33 +185,30 @@ private
 
   #----------------------------------------------------------------------------
   def _validate_flag(flag)
-    @log.debug "Validating flag: ", flag
     type = flag[:type]
-    if not flag[:required]
-      @log.debug "Flag '#{flag[:name]} is type '#{type}'"
-      default_value_type = @types.type_of flag[:default_value]
-      @log.debug "dfv class (#{default_value_type.class}), value (#{default_value_type})"
-      @log.debug "type class (#{type.class}), value (#{type})"
-      if flag.key?(:default) and default_value_type != type
+    if type == :boolean and flag[:multi]
+        raise "Option '#{flag[:name]}' has a type '#{:boolean}', which is not allowed for options that accept multiple values"
+    else
+      default_value_type = @types.type_of flag[:default]
+      # Note: type_of always returns a symbol, so convert "type" to
+      # a symbol as well for a fair comparison
+      if default_value_type != type.to_sym
         raise "Option '#{flag[:name]}' has a default value of type '#{default_value_type}', which does not match the specified type '#{type}'"
       end
-    end
-    if type == :boolean and flag[:multi]
-      raise "Option '#{flag[:name]}' has a type '#{default_value_type}', which is not allowed for options that accept multiple values"
     end
   end
 
   #----------------------------------------------------------------------------
   def _add_to_options(flag)
     if not flag[:required]
+      name = flag[:name].to_sym
       if flag[:multi]
-        @options[name_as_sym] = []
-        @options[name_as_sym] << flag[:default_value]
+        @options[name] = []
+        @options[name] << flag[:default]
       else
-        @options[name_as_sym] = flag[:default_value]
+        @options[name] = flag[:default]
       end
     end
-    flag
   end
 
 end
