@@ -31,12 +31,12 @@ module FlyingRobots
 class Application
 public
   #----------------------------------------------------------------------------
-  def initialize(argv, flags = [])
+  def initialize(argv, args_config = {})
     @log = Log.new({
       :name => "App",
       # :volume => Log::VOLUME_DEBUG
     })
-    @options = _parse_args(argv, flags)
+    @options = _parse_args(argv, args_config)
     @log.debug @options
   end
 
@@ -50,11 +50,8 @@ public
 
 private
   #----------------------------------------------------------------------------
-  def _parse_args(argv, flags)
-    parser = Args.new()
-    flags.each { |f| 
-      parser.describe_flag f[:name], f[:help_desc], f[:options] 
-    }
+  def _parse_args(argv, args_config)
+    parser = Args.new(args_config)
     parser.parse argv
   rescue => exc
     @log.exception exc
