@@ -63,7 +63,7 @@ module FlyingRobots
     end
 
     def exception(e)
-      error "[exception] ", e, e.backtrace
+      error "(exception)", e.inspect, e.backtrace
     end
 
   private
@@ -96,7 +96,7 @@ module FlyingRobots
     end
 
     def _object_to_s(object)
-      if object.class == Array
+      if object.class == Array and object.size > 0
         JSON.pretty_generate object
       elsif object.class == Hash
         JSON.pretty_generate object
