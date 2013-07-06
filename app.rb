@@ -57,6 +57,7 @@ private
     @log.exception exc
     Hash.new
   end
+
 end
 
 end

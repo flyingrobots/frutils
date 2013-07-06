@@ -90,6 +90,7 @@ class Types
     raise "No string to object transformation defined for type '#{type}'." if class_info[:string_to_object] == nil
     class_info[:string_to_object].call str
   end
+
 end
 
 end

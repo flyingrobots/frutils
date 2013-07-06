@@ -27,9 +27,11 @@ require 'pathname.rb'
 module FlyingRobots
 
 class Files
+  #--------------------------------------------------------------------------
   def self.relative_path(from, to)
     Pathname.new(to).relative_path_from(Pathname.new(from)).to_s
   end
+
 end
 
 end
