@@ -74,7 +74,13 @@ public
 
   #--------------------------------------------------------------------------
   def exception(e)
-    error "(exception)", e.inspect, e.backtrace
+    error e.inspect
+    pretty VOLUME_ERROR, e.backtrace
+  end
+
+  #----------------------------------------------------------------------------
+  def pretty(volume, value)
+    _log volume, _object_to_s(value, {:pretty => true})
   end
 
 private
@@ -110,14 +116,29 @@ private
   end
 
   #--------------------------------------------------------------------------
-  def _object_to_s(object)
+  def _object_to_s(object, options = {})
+    json = true
+    hash = true
     case object
     when Array, Hash
-      JSON.generate object
+      hash = false
     when Bignum, FalseClass, Fixnum, Float, Integer, NilClass, String, TrueClass
-      object.to_s
+      json = false
+    end
+
+    if json
+      to_print = hash ? Obj.to_hash(object) : object
+      _json_print to_print, options[:pretty] == true
     else
-      JSON.generate Obj.to_hash(object)
+      object.to_s
+    end
+  end
+
+  def _json_print(object, pretty = false)
+    if pretty
+      JSON.pretty_generate object
+    else
+      JSON.generate object
     end
   end
 
